@@ -4,11 +4,13 @@ import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 
+
 # Caching to load image only once
 @st.cache_data
 def load_image(uploaded_file):
     image = Image.open(uploaded_file)
     return np.array(image)
+
 
 # Reduce image size to improve processing speed
 @st.cache_data
@@ -20,6 +22,7 @@ def resize_image(image, max_dim=800):
         return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
     return image
 
+
 # Function to apply GrabCut algorithm
 @st.cache_data
 def apply_grabcut(image, rect):
@@ -30,11 +33,24 @@ def apply_grabcut(image, rect):
     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
     return image * mask2[:, :, np.newaxis]
 
+
 # Main Streamlit app
-st.title("Optimized Background Remover using GrabCut")
+st.set_page_config(page_title="Background Remover", page_icon="🖼️", layout="wide")
+
+st.header("🎨 Optimized Background Remover")
+st.write(
+    "This app allows you to upload an image, select a region, and remove the background using the GrabCut algorithm.")
+
+# Sidebar for user instructions
+st.sidebar.title("📄 Instructions")
+st.sidebar.write("""
+1. Upload an image in the uploader below.
+2. Draw a rectangle around the object you want to keep.
+3. Click the "Remove Background" button to apply the algorithm.
+""")
 
 # Upload an image
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("🖼️ Choose an image...", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
     # Load and resize image
@@ -42,9 +58,13 @@ if uploaded_file is not None:
     image_np = resize_image(image_np)
 
     # Display the uploaded image
+    st.subheader("📌 Original Image")
     st.image(image_np, caption="Original Image", use_column_width=True)
 
     # Set canvas parameters
+    st.subheader("✏️ Draw Rectangle")
+    st.write("Draw a rectangle around the object you want to keep.")
+
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0.3)",
         stroke_width=3,
@@ -73,7 +93,7 @@ if uploaded_file is not None:
             st.image(rect_image, caption="Selected Region", use_column_width=True)
 
             # Button to apply GrabCut
-            if st.button("Remove Background"):
+            if st.button("✂️ Remove Background"):
                 with st.spinner("Processing..."):
                     rect = (left, top, width, height)
                     result_image = apply_grabcut(image_np, rect)
@@ -81,3 +101,7 @@ if uploaded_file is not None:
                     # Convert to Image format for display
                     result_image_pil = Image.fromarray(result_image)
                     st.image(result_image_pil, caption="Image with Background Removed", use_column_width=True)
+
+                    # Option to download result
+                    st.download_button("Download Result", data=result_image_pil.tobytes(), file_name="result_image.png",
+                                       mime="image/png")
