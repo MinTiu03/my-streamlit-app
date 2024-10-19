@@ -59,7 +59,7 @@ if uploaded_file is not None:
 
     # Display the uploaded image
     st.subheader("📌 Original Image")
-    st.image(image_np, caption="Original Image", use_column_width=True)
+    st.image(image_np, caption="Original Image", use_column_width=True, width=400)
 
     # Set canvas parameters
     st.subheader("✏️ Draw Rectangle")
